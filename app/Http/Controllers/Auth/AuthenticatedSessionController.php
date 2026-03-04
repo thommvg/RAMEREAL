@@ -14,7 +14,7 @@ use Inertia\Response;
 class AuthenticatedSessionController extends Controller
 {
     /**
-     * Display the login view.
+     * Muestra la vista de inicio de sesión.
      */
     public function create(): Response
     {
@@ -25,7 +25,7 @@ class AuthenticatedSessionController extends Controller
     }
 
     /**
-     * Handle an incoming authentication request.
+     * Maneja la solicitud de autenticación.
      */
     public function store(LoginRequest $request): RedirectResponse
     {
@@ -33,11 +33,18 @@ class AuthenticatedSessionController extends Controller
 
         $request->session()->regenerate();
 
+        // --- LÓGICA DE REDIRECCIÓN PERSONALIZADA PARA RAME ---
+        // Si el usuario tiene el rol de administrador, va directo al DashboardReal
+        if ($request->user()->role === 'admin') {
+            return redirect()->intended(route('admin.dashboard'));
+        }
+
+        // Si es un usuario normal (o no tiene rol definido), va al dashboard estándar
         return redirect()->intended(route('dashboard', absolute: false));
     }
 
     /**
-     * Destroy an authenticated session.
+     * Cierra la sesión del usuario.
      */
     public function destroy(Request $request): RedirectResponse
     {
