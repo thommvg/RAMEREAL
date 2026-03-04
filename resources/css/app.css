@@ -1,0 +1,42 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+.leaflet-container {
+
+    border-radius: 12px;
+
+}
+
+.leaflet-popup-content-wrapper {
+
+    border-radius: 10px;
+
+}
+
+.leaflet-marker-icon {
+
+    transition: transform 0.2s ease;
+
+}
+
+.leaflet-marker-icon:hover {
+
+    transform: scale(1.15);
+
+}
+
+/* Scroll invisible pero funcional */
+.custom-scroll::-webkit-scrollbar {
+    width: 0px;
+    background: transparent;
+}
+
+.custom-scroll::-webkit-scrollbar-thumb {
+    background: transparent;
+}
+
+.custom-scroll {
+    -ms-overflow-style: none;  /* IE */
+    scrollbar-width: none;     /* Firefox */
+}
