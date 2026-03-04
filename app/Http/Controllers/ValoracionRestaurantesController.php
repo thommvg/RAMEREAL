@@ -2,64 +2,53 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Valoracion_restaurantes;
+use App\Models\ValoracionRestaurante; // Nombre corregido
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Inertia\Inertia;
 
 class ValoracionRestaurantesController extends Controller
 {
     /**
-     * Display a listing of the resource.
+     * Muestra todas las valoraciones en el Dashboard (Para el Admin)
      */
     public function index()
     {
-        //
+        // Traemos las valoraciones con la info del usuario y del restaurante
+        $valoraciones = ValoracionRestaurante::with(['usuario', 'restaurante'])->latest()->get();
+
+        return Inertia::render('Admin/ValoracionesRestaurantes', [
+            'valoraciones' => $valoraciones
+        ]);
     }
 
     /**
-     * Show the form for creating a new resource.
-     */
-    public function create()
-    {
-        //
-    }
-
-    /**
-     * Store a newly created resource in storage.
+     * Guarda la reseña de un restaurante
      */
     public function store(Request $request)
     {
-        //
+        $validated = $request->validate([
+            'restaurante_id' => 'required|exists:restaurantes,id',
+            'puntuacion'     => 'required|integer|min:1|max:5',
+            'comentario'     => 'nullable|string|max:1000',
+        ]);
+
+        // Asignamos el ID del usuario logueado automáticamente
+        $validated['user_id'] = Auth::id();
+
+        ValoracionRestaurante::create($validated);
+
+        return redirect()->back()->with('success', '¡Gracias por compartir tu experiencia!');
     }
 
     /**
-     * Display the specified resource.
+     * Permite al admin eliminar una reseña inapropiada
      */
-    public function show(Valoracion_restaurantes $valoracion_restaurantes)
+    public function destroy($id)
     {
-        //
-    }
+        $valoracion = ValoracionRestaurante::findOrFail($id);
+        $valoracion->delete();
 
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(Valoracion_restaurantes $valoracion_restaurantes)
-    {
-        //
-    }
-
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(Request $request, Valoracion_restaurantes $valoracion_restaurantes)
-    {
-        //
-    }
-
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy(Valoracion_restaurantes $valoracion_restaurantes)
-    {
-        //
+        return redirect()->back()->with('success', 'La reseña ha sido eliminada.');
     }
 }

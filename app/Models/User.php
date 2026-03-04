@@ -2,42 +2,27 @@
 
 namespace App\Models;
 
-// use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
 class User extends Authenticatable
 {
-    /** @use HasFactory<\Database\Factories\UserFactory> */
     use HasFactory, Notifiable;
 
-    /**
-     * The attributes that are mass assignable.
-     *
-     * @var list<string>
-     */
     protected $fillable = [
         'name',
         'email',
         'password',
+        'role',
+        // Si vas a tener roles (admin/cliente), deberías añadir 'role' aquí después
     ];
 
-    /**
-     * The attributes that should be hidden for serialization.
-     *
-     * @var list<string>
-     */
     protected $hidden = [
         'password',
         'remember_token',
     ];
 
-    /**
-     * Get the attributes that should be cast.
-     *
-     * @return array<string, string>
-     */
     protected function casts(): array
     {
         return [
@@ -45,4 +30,34 @@ class User extends Authenticatable
             'password' => 'hashed',
         ];
     }
+
+    // --- NUEVAS RELACIONES PARA EL PROYECTO RAME ---
+
+    /**
+     * Un usuario puede tener muchos mensajes de contacto
+     */
+    public function contactos()
+    {
+        return $this->hasMany(Contacto::class, 'user_id');
+    }
+
+    /**
+     * Un usuario puede hacer muchas valoraciones de restaurantes
+     */
+    public function valoracionesRestaurantes()
+    {
+        return $this->hasMany(ValoracionRestaurante::class, 'user_id');
+    }
+
+    /**
+     * Un usuario puede hacer muchas valoraciones de lugares
+     */
+    public function valoracionesLugares()
+    {
+        return $this->hasMany(ValoracionLugar::class, 'user_id');
+    }
+    public function isAdmin()
+{
+    return $this->role === 'admin';
+}
 }

@@ -13,11 +13,19 @@ public function up()
 {
     Schema::create('contactos', function (Blueprint $table) {
         $table->id();
+        
+        // Relación opcional con el usuario
+        // nullable() permite que personas no registradas también contacten
+        $table->foreignId('user_id')
+              ->nullable()
+              ->constrained('users')
+              ->onDelete('set null'); 
+
         $table->string('nombre');
         $table->string('telefono');
         $table->string('correo');
         $table->text('mensaje');
-        $table->timestamps(); // Aquí sí dejamos los tiempos para saber cuándo escribieron
+        $table->timestamps();
     });
 }
 

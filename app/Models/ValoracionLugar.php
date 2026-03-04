@@ -3,14 +3,17 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class ValoracionLugar extends Model
 {
-    // Asegúrate de que este sea el nombre real de tu tabla en phpMyAdmin
+    use HasFactory;
+
     protected $table = 'valoracion_lugares'; 
 
     protected $fillable = [
         'lugares_id',
+        'user_id',      // <--- ¡OJO! Debes añadir esto para poder guardar quién califica
         'puntuacion',
         'comentario'
     ];
@@ -20,9 +23,15 @@ class ValoracionLugar extends Model
     {
         return $this->belongsTo(Lugar::class, 'lugares_id');
     }
+
+    // Relación: Una valoración pertenece a un usuario
+    public function usuario()
+    {
+        // Especificamos 'user_id' por seguridad para que coincida con tu migración
+        return $this->belongsTo(User::class, 'user_id');
+    }
     public function user()
-{
-    // Esto le dice: "Busca en la tabla users al dueño de esta valoración"
-    return $this->belongsTo(User::class);
-}
+    {
+        return $this->belongsTo(User::class, 'user_id');
+    }
 }

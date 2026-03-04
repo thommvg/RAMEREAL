@@ -10,25 +10,29 @@ use App\Models\ValoracionLugar;
 use App\Models\ValoracionRestaurante;
 use App\Models\Contacto;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Auth;
 
 class DashboardController extends Controller
 {
+    /**
+     * Muestra la vista principal con el Top 3 y el Mapa unificado.
+     */
     public function index()
     {
-        // Lugares mejor puntuados
+        // 1. Lugares mejor puntuados (excluyendo tipo 1 si es necesario)
         $lugares = Lugar::withAvg('valoraciones', 'puntuacion')
             ->where('tipo_de_turismo_id', '!=', 1)
             ->orderByDesc('valoraciones_avg_puntuacion')
             ->take(3)
             ->get();
 
-        // Restaurantes mejor puntuados
+        // 2. Restaurantes mejor puntuados
         $restaurantes = Restaurante::withAvg('valoraciones', 'puntuacion')
             ->orderByDesc('valoraciones_avg_puntuacion')
             ->take(3)
             ->get();
 
-        // 🔥 Lugares con coordenadas válidas
+        // 3. Preparar datos para el Mapa (Lugares)
         $lugaresMapa = Lugar::whereNotNull('lat')
             ->whereNotNull('lng')
             ->get()
@@ -37,7 +41,7 @@ class DashboardController extends Controller
                 return $lugar;
             });
 
-        // 🔥 Restaurantes con coordenadas válidas
+        // 4. Preparar datos para el Mapa (Restaurantes)
         $restaurantesMapa = Restaurante::whereNotNull('lat')
             ->whereNotNull('lng')
             ->get()
@@ -46,19 +50,22 @@ class DashboardController extends Controller
                 return $restaurante;
             });
 
-        // 🔥 Unimos todo
-        $lugaresMapa = $lugaresMapa->concat($restaurantesMapa)->values();
+        // Combinamos ambas colecciones para el mapa de React
+        $mapaCompleto = $lugaresMapa->concat($restaurantesMapa)->values();
 
         return Inertia::render('Dashboard', [
             'lugares' => $lugares,
             'restaurantes' => $restaurantes,
-            'lugaresMapa' => $lugaresMapa
+            'lugaresMapa' => $mapaCompleto
         ]);
     }
 
+    /**
+     * Registra un nuevo establecimiento y crea su primera valoración.
+     */
     public function store(Request $request)
     {
-        // Validación
+        // Validación con tus mensajes personalizados
         $request->validate([
             'nombre' => 'required|string|max:100',
             'direccion' => 'required|string|max:255',
@@ -76,9 +83,9 @@ class DashboardController extends Controller
             'in'       => 'Tipo inválido.',
         ]);
 
-        // 🔥 GEOCODIFICACIÓN CON NOMINATIM (CORREGIDA)
+        // 🔥 PROCESO DE GEOCODIFICACIÓN (Obtener lat/lng de la dirección)
         $direccionCompleta = $request->direccion . ', ' . $request->ciudad . ', Colombia';
-
+        
         $response = Http::withHeaders([
             'User-Agent' => 'RameProject/1.0 (contacto@rame.com)'
         ])->get('https://nominatim.openstreetmap.org/search', [
@@ -96,9 +103,11 @@ class DashboardController extends Controller
             $longitud = $data['lon'];
         }
 
-        // Guardar Lugar
-        if ($request->tipo_entidad === 'lugar') {
+        // ID del usuario logueado para la auditoría y dashboard
+        $userId = Auth::id();
 
+        if ($request->tipo_entidad === 'lugar') {
+            // Crear el Lugar físico
             $nuevo = Lugar::create([
                 'nombre' => $request->nombre,
                 'direccion' => $request->direccion,
@@ -110,16 +119,16 @@ class DashboardController extends Controller
                 'lng' => $longitud,
             ]);
 
+            // Crear la Valoración vinculada al usuario
             ValoracionLugar::create([
                 'lugares_id' => $nuevo->id,
+                'user_id'    => $userId,
                 'puntuacion' => $request->puntuacion,
                 'comentario' => $request->comentario,
             ]);
 
-        }
-        // Guardar Restaurante
-        else {
-
+        } else {
+            // Crear el Restaurante físico
             $nuevo = Restaurante::create([
                 'nombre' => $request->nombre,
                 'direccion' => $request->direccion,
@@ -131,16 +140,21 @@ class DashboardController extends Controller
                 'lng' => $longitud,
             ]);
 
+            // Crear la Valoración vinculada al usuario
             ValoracionRestaurante::create([
                 'restaurante_id' => $nuevo->id,
-                'puntuacion' => $request->puntuacion,
-                'comentario' => $request->comentario,
+                'user_id'        => $userId,
+                'puntuacion'     => $request->puntuacion,
+                'comentario'     => $request->comentario,
             ]);
         }
 
-        return redirect()->back()->with('success', '¡Registro creado correctamente!');
+        return redirect()->back()->with('success', '¡Registro creado correctamente en Rame!');
     }
 
+    /**
+     * Guarda mensajes de contacto y los vincula al perfil si el usuario está activo.
+     */
     public function contactoStore(Request $request)
     {
         $data = $request->validate([
@@ -149,6 +163,11 @@ class DashboardController extends Controller
             'correo' => 'required|email',
             'mensaje' => 'required|string',
         ]);
+
+        // Si hay sesión iniciada, registramos el ID del usuario automáticamente
+        if (Auth::check()) {
+            $data['user_id'] = Auth::id();
+        }
 
         Contacto::create($data);
 

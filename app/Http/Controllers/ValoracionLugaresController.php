@@ -2,76 +2,41 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Valoracion_lugares;
-use App\Models\Lugar; // Importamos el modelo Lugar para que no de error
+use App\Models\ValoracionLugar; // Asegúrate de que el nombre coincida con tu modelo
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 
 class ValoracionLugaresController extends Controller
 {
     /**
-     * Display a listing of the resource.
-     */
-    public function index()
-    {
-        //
-    }
-
-    /**
-     * Show the form for creating a new resource.
-     */
-    public function create()
-    {
-        //
-    }
-
-    /**
-     * Store a newly created resource in storage.
+     * Guarda la reseña que el usuario hace de un lugar
      */
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'nombre' => 'required|string|max:255',
-            'ciudad' => 'required|string|max:255',
-            'imagen' => 'required|string', 
-            'puntuacion' => 'required|numeric|min:1|max:5', // Ahora acepta desde 1 estrella
+            'lugares_id' => 'required|exists:lugares,id', // El lugar debe existir
+            'puntuacion' => 'required|integer|min:1|max:5',
+            'comentario' => 'nullable|string|max:500',
         ]);
 
-        // Guardamos en la tabla lugares
-        Lugar::create($validated); 
+        // Agregamos el ID del usuario que está logueado automáticamente
+        $validated['user_id'] = Auth::id();
 
-        // Enviamos el mensaje de éxito a la sesión
-        return redirect()->back()->with('success', '¡Excelente! El lugar se ha guardado correctamente en Rame.');
+        // Guardamos en la tabla de VALORACIONES, no en la de lugares
+        ValoracionLugar::create($validated); 
+
+        return redirect()->back()->with('success', '¡Gracias por calificar este lugar en Rame!');
     }
 
     /**
-     * Display the specified resource.
+     * Para mostrar las valoraciones en el Dashboard del Admin
      */
-    public function show(Valoracion_lugares $valoracion_lugares)
+    public function index()
     {
-        //
-    }
-
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(Valoracion_lugares $valoracion_lugares)
-    {
-        //
-    }
-
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(Request $request, Valoracion_lugares $valoracion_lugares)
-    {
-        //
-    }
-
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy(Valoracion_lugares $valoracion_lugares)
-    {
-        //
+        // Traemos las valoraciones con el nombre del usuario y el nombre del lugar
+        $valoraciones = ValoracionLugar::with(['usuario', 'lugar'])->latest()->get();
+        
+        // Aquí retornarías a tu vista de React/Inertia
+        // return Inertia::render('Admin/ValoracionesLugares', ['valoraciones' => $valoraciones]);
     }
 }
