@@ -1,34 +1,60 @@
-import React, { useState } from 'react';
-import { Head, usePage, router, useForm } from '@inertiajs/react';
+import React, { useState } from "react";
+import { Head, usePage, router, useForm } from "@inertiajs/react";
 
-export default function DashboardReal({ stats, lugares, restaurantes, usuarios_lista, admins_lista, mensajes_lista }) {
+export default function DashboardReal({ stats, lugares = [], restaurantes = [], usuarios_lista = [], admins_lista = [], mensajes_lista = [] }) {
+
     const { auth } = usePage().props;
-    const [view, setView] = useState('welcome');
+    const [view, setView] = useState("welcome");
 
-    // Formularios
-    const profileForm = useForm({ name: auth.user.name, email: auth.user.email, password: '' });
-    const adminForm = useForm({ name: '', email: '', password: '' });
+    const profileForm = useForm({
+        name: auth.user.name,
+        email: auth.user.email,
+        password: ""
+    });
+
+    const adminForm = useForm({
+        name: "",
+        email: "",
+        password: ""
+    });
+
+    const dataMap = {
+        lugares,
+        restaurantes,
+        usuarios: usuarios_lista,
+        mensajes: mensajes_lista
+    };
+
+    const routeMap = {
+        lugares: "lugar",
+        restaurantes: "restaurante",
+        usuarios: "usuario",
+        mensajes: "mensaje"
+    };
 
     const submitProfile = (e) => {
         e.preventDefault();
-        profileForm.post('/admin/profile/update', { preserveScroll: true });
+        profileForm.post("/admin/profile/update");
     };
 
     const submitNewAdmin = (e) => {
         e.preventDefault();
-        adminForm.post('/admin/admins/store', {
+
+        adminForm.post("/admin/admins/store", {
             onSuccess: () => {
-                alert('Nuevo Administrador creado');
+                alert("Admin creado");
                 adminForm.reset();
             }
         });
     };
 
     const handleDelete = (id, tipo) => {
-        if (confirm(`¿Eliminar este ${tipo}?`)) {
-            const routeMap = { 'lugar': 'lugar', 'restaurante': 'restaurante', 'user': 'usuario', 'mensaje': 'mensaje' };
-            router.delete(`/admin/${routeMap[tipo]}/${id}`);
-        }
+
+        if (!confirm("¿Seguro que deseas eliminar esto?")) return;
+
+        router.delete(`/admin/${routeMap[tipo]}/${id}`, {
+            preserveScroll: true
+        });
     };
 
     const handleToggle = (id) => {
@@ -36,140 +62,288 @@ export default function DashboardReal({ stats, lugares, restaurantes, usuarios_l
     };
 
     return (
-        <div className="min-h-screen bg-[#0F1016] text-white font-sans pb-10">
-            <Head title="RAME - Admin Hub" />
+        <div className="min-h-screen bg-[#0F1016] text-white pb-20">
+
+            <Head title="Admin Dashboard" />
 
             {/* HEADER */}
-            <header className="bg-[#1A1B23] border-b border-purple-900/30 px-8 py-6 flex justify-between items-center shadow-2xl">
-                <h1 onClick={() => setView('welcome')} className="text-2xl font-black text-purple-500 italic cursor-pointer tracking-tighter hover:scale-105 transition">RAME.</h1>
+
+            <header className="bg-[#1A1B23] px-8 py-6 flex justify-between items-center border-b border-purple-900/20">
+
+                <h1
+                    className="text-2xl font-black text-purple-500 cursor-pointer"
+                    onClick={() => setView("welcome")}
+                >
+                    RAME
+                </h1>
+
                 <div className="flex items-center gap-6">
-                    <button onClick={() => router.post('/logout')} className="text-xs font-bold uppercase tracking-widest text-slate-400 hover:text-purple-400 transition">Cerrar Sesión</button>
-                    <div className="flex items-center gap-3 bg-[#252631] px-4 py-2 rounded-full border border-purple-500/20 shadow-[0_0_15px_rgba(168,85,247,0.1)]">
-                        <div className="w-8 h-8 bg-purple-600 rounded-full flex items-center justify-center text-sm font-bold">{auth.user.name[0]}</div>
-                        <span className="text-sm font-bold">{auth.user.name}</span>
+
+                    <button
+                        onClick={() => router.post("/logout")}
+                        className="text-sm text-slate-400 hover:text-purple-400"
+                    >
+                        Cerrar sesión
+                    </button>
+
+                    <div className="flex items-center gap-3 bg-[#252631] px-4 py-2 rounded-full">
+                        <div className="w-8 h-8 bg-purple-600 rounded-full flex items-center justify-center font-bold">
+                            {auth.user.name[0]}
+                        </div>
+
+                        <span>{auth.user.name}</span>
                     </div>
+
                 </div>
+
             </header>
 
+            {/* MAIN */}
+
             <main className="max-w-7xl mx-auto px-6 mt-12">
-                {view === 'welcome' ? (
-                    <section className="animate-in fade-in slide-in-from-bottom-4 duration-700">
-                        <h2 className="text-4xl font-black mb-10 tracking-tight">Panel de <span className="text-purple-500">Administración</span></h2>
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                            <StatCard title="Lugares" count={stats.lugares} icon="📍" onClick={() => setView('lugares')} />
-                            <StatCard title="Restaurantes" count={stats.restaurantes} icon="🍴" onClick={() => setView('restaurantes')} />
-                            <StatCard title="Mensajes" count={stats.mensajes} icon="✉️" onClick={() => setView('mensajes')} />
-                            <StatCard title="Usuarios" count={stats.usuarios} icon="👤" onClick={() => setView('usuarios')} />
-                            <StatCard title="Admins" count={stats.admins} icon="🔑" onClick={() => setView('admins')} />
-                            <StatCard title="Mi Perfil" count="Editar" icon="⚙️" onClick={() => setView('perfil')} />
-                        </div>
-                    </section>
+
+                {view === "welcome" ? (
+
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+
+                        <StatCard title="Lugares" count={stats.lugares} onClick={() => setView("lugares")} />
+                        <StatCard title="Restaurantes" count={stats.restaurantes} onClick={() => setView("restaurantes")} />
+                        <StatCard title="Mensajes" count={stats.mensajes} onClick={() => setView("mensajes")} />
+                        <StatCard title="Usuarios" count={stats.usuarios} onClick={() => setView("usuarios")} />
+                        <StatCard title="Admins" count={stats.admins} onClick={() => setView("admins")} />
+                        <StatCard title="Mi Perfil" count="Editar" onClick={() => setView("perfil")} />
+
+                    </div>
+
                 ) : (
-                    <div className="animate-in zoom-in duration-300">
-                        <button onClick={() => setView('welcome')} className="mb-8 text-purple-400 font-bold flex items-center gap-2 hover:translate-x-[-5px] transition-all">
-                            ← Volver al Hub
+
+                    <div>
+
+                        <button
+                            onClick={() => setView("welcome")}
+                            className="mb-8 text-purple-400"
+                        >
+                            ← Volver
                         </button>
-                        
-                        <div className="bg-[#1A1B23] rounded-[30px] p-10 border border-purple-900/20 shadow-2xl">
-                            {view === 'perfil' ? (
-                                <form onSubmit={submitProfile} className="max-w-md mx-auto space-y-6">
-                                    <h3 className="text-2xl font-black text-center mb-8 text-purple-500">Mi Perfil</h3>
-                                    <AdminInput label="Nombre" value={profileForm.data.name} onChange={e => profileForm.setData('name', e.target.value)} />
-                                    <AdminInput label="Email" type="email" value={profileForm.data.email} onChange={e => profileForm.setData('email', e.target.value)} />
-                                    <AdminInput label="Cambiar Clave" type="password" value={profileForm.data.password} onChange={e => profileForm.setData('password', e.target.value)} />
-                                    <button className="w-full bg-purple-600 hover:bg-purple-500 py-4 rounded-2xl font-black transition-all shadow-lg">Actualizar Datos</button>
+
+                        <div className="bg-[#1A1B23] p-10 rounded-3xl">
+
+                            {/* PERFIL */}
+
+                            {view === "perfil" && (
+
+                                <form onSubmit={submitProfile} className="max-w-md space-y-6">
+
+                                    <AdminInput
+                                        label="Nombre"
+                                        value={profileForm.data.name}
+                                        onChange={e => profileForm.setData("name", e.target.value)}
+                                    />
+
+                                    <AdminInput
+                                        label="Email"
+                                        value={profileForm.data.email}
+                                        onChange={e => profileForm.setData("email", e.target.value)}
+                                    />
+
+                                    <AdminInput
+                                        label="Nueva contraseña"
+                                        type="password"
+                                        value={profileForm.data.password}
+                                        onChange={e => profileForm.setData("password", e.target.value)}
+                                    />
+
+                                    <button className="bg-purple-600 px-6 py-3 rounded-xl">
+                                        Actualizar perfil
+                                    </button>
+
                                 </form>
-                            ) : view === 'admins' ? (
-                                <section className="space-y-10">
-                                    <form onSubmit={submitNewAdmin} className="bg-[#252631] p-6 rounded-3xl flex flex-wrap gap-4 items-end border border-purple-500/10">
-                                        <div className="flex-1 min-w-[200px]"><AdminInput label="Nombre" value={adminForm.data.name} onChange={e => adminForm.setData('name', e.target.value)} /></div>
-                                        <div className="flex-1 min-w-[200px]"><AdminInput label="Email" value={adminForm.data.email} onChange={e => adminForm.setData('email', e.target.value)} /></div>
-                                        <div className="flex-1 min-w-[200px]"><AdminInput label="Clave" type="password" value={adminForm.data.password} onChange={e => adminForm.setData('password', e.target.value)} /></div>
-                                        <button type="submit" className="bg-purple-600 px-8 py-4 rounded-2xl font-black h-[58px] hover:bg-purple-500 transition">Añadir</button>
+
+                            )}
+
+                            {/* ADMINS */}
+
+                            {view === "admins" && (
+
+                                <div className="space-y-10">
+
+                                    <form
+                                        onSubmit={submitNewAdmin}
+                                        className="flex gap-4 flex-wrap"
+                                    >
+
+                                        <AdminInput
+                                            label="Nombre"
+                                            value={adminForm.data.name}
+                                            onChange={e => adminForm.setData("name", e.target.value)}
+                                        />
+
+                                        <AdminInput
+                                            label="Email"
+                                            value={adminForm.data.email}
+                                            onChange={e => adminForm.setData("email", e.target.value)}
+                                        />
+
+                                        <AdminInput
+                                            label="Password"
+                                            type="password"
+                                            value={adminForm.data.password}
+                                            onChange={e => adminForm.setData("password", e.target.value)}
+                                        />
+
+                                        <button className="bg-purple-600 px-6 py-3 rounded-xl">
+                                            Crear Admin
+                                        </button>
+
                                     </form>
-                                    <AdminTable 
-                                        list={admins_lista} 
+
+                                    <AdminTable
+                                        list={admins_lista}
+                                        onDelete={(id) => handleDelete(id, "usuarios")}
                                         onToggle={handleToggle}
-                                        onDelete={(id) => handleDelete(id, 'user')} 
-                                        currentId={auth.user.id} 
+                                        currentId={auth.user.id}
                                         isAdminView={true}
                                     />
-                                </section>
-                            ) : (
-                                <AdminTable 
-                                    list={view === 'lugares' ? lugares : view === 'restaurantes' ? restaurantes : view === 'usuarios' ? usuarios_lista : mensajes_lista} 
-                                    onDelete={(id) => handleDelete(id, view === 'usuarios' ? 'user' : view.slice(0,-1))} 
+
+                                </div>
+
+                            )}
+
+                            {/* TABLAS GENERALES */}
+
+                            {!["admins", "perfil"].includes(view) && (
+
+                                <AdminTable
+                                    list={dataMap[view] || []}
+                                    onDelete={(id) => handleDelete(id, view)}
                                     currentId={auth.user.id}
                                 />
+
                             )}
+
                         </div>
+
                     </div>
+
                 )}
+
             </main>
+
         </div>
     );
 }
 
-// COMPONENTES AUXILIARES
-function StatCard({ title, count, icon, onClick }) {
+function StatCard({ title, count, onClick }) {
+
     return (
-        <div onClick={onClick} className="bg-[#1A1B23] p-8 rounded-[35px] border border-purple-900/20 hover:border-purple-500/50 transition-all cursor-pointer group shadow-lg">
-            <div className="text-3xl mb-4 group-hover:scale-110 transition-transform">{icon}</div>
-            <h4 className="text-slate-500 font-bold uppercase text-[10px] tracking-widest mb-1">{title}</h4>
-            <div className="text-3xl font-black text-white">{count}</div>
+        <div
+            onClick={onClick}
+            className="bg-[#1A1B23] p-8 rounded-3xl cursor-pointer hover:border-purple-500 border border-purple-900/20"
+        >
+            <h4 className="text-slate-500 text-xs">{title}</h4>
+            <div className="text-3xl font-black">{count}</div>
         </div>
     );
 }
 
 function AdminInput({ label, type = "text", value, onChange }) {
+
     return (
-        <div className="w-full">
-            <label className="text-[10px] font-black text-slate-500 uppercase mb-2 block ml-2">{label}</label>
-            <input type={type} value={value} onChange={onChange} className="w-full bg-[#0F1016] border border-purple-900/20 rounded-2xl p-4 focus:border-purple-500 transition text-sm text-white focus:ring-0 shadow-inner" />
+        <div className="flex flex-col">
+
+            <label className="text-xs text-slate-500 mb-1">
+                {label}
+            </label>
+
+            <input
+                type={type}
+                value={value}
+                onChange={onChange}
+                className="bg-[#0F1016] border border-purple-900/20 p-3 rounded-xl"
+            />
+
         </div>
     );
 }
 
 function AdminTable({ list, onDelete, onToggle, currentId, isAdminView }) {
+
     return (
-        <table className="w-full text-left">
+
+        <table className="w-full">
+
             <thead>
-                <tr className="text-slate-500 text-[10px] font-black uppercase tracking-widest border-b border-purple-900/10">
-                    <th className="pb-6 px-4">Información</th>
-                    {isAdminView && <th className="pb-6 px-4 text-center">Rango</th>}
-                    <th className="pb-6 px-4 text-right">Acciones</th>
+                <tr className="text-left text-slate-500 text-xs">
+                    <th className="py-4">Información</th>
+                    {isAdminView && <th>Rol</th>}
+                    <th className="text-right">Acciones</th>
                 </tr>
             </thead>
+
             <tbody>
-                {list.map(item => (
-                    <tr key={item.id} className="border-b border-purple-900/5 hover:bg-purple-500/5 transition">
-                        <td className="py-5 px-4">
-                            <span className="font-bold text-slate-200">{item.nombre || item.name}</span>
-                            <span className="block text-xs text-slate-500">{item.email || item.ciudad || item.correo}</span>
-                        </td>
-                        {isAdminView && (
-                            <td className="py-5 px-4 text-center">
-                                <span className={`px-3 py-1 rounded-full text-[9px] font-black uppercase ${item.role === 'admin' ? 'bg-purple-500/20 text-purple-400 border border-purple-500/30' : 'bg-slate-500/10 text-slate-500 border border-slate-500/20'}`}>
-                                    {item.role}
-                                </span>
-                            </td>
-                        )}
-                        <td className="py-5 px-4 text-right space-x-2">
-                            {onToggle && item.id !== currentId && (
-                                <button 
-                                    onClick={() => onToggle(item.id)} 
-                                    className={`text-[10px] font-black uppercase px-4 py-2 rounded-xl transition ${item.role === 'admin' ? 'text-amber-500 bg-amber-500/10 hover:bg-amber-500 hover:text-white' : 'text-purple-400 bg-purple-500/10 hover:bg-purple-500 hover:text-white'}`}
-                                >
-                                    {item.role === 'admin' ? 'Quitar Rango' : 'Hacer Admin'}
-                                </button>
-                            )}
-                            {item.id !== currentId && (
-                                <button onClick={() => onDelete(item.id)} className="text-[10px] font-black uppercase text-rose-500 bg-rose-500/10 px-4 py-2 rounded-xl hover:bg-rose-500 hover:text-white transition">Borrar</button>
-                            )}
+
+                {list.length === 0 && (
+
+                    <tr>
+                        <td colSpan="3" className="text-center py-10 text-slate-500">
+                            No hay datos
                         </td>
                     </tr>
+
+                )}
+
+                {list.map(item => (
+
+                    <tr key={item.id} className="border-t border-purple-900/10">
+
+                        <td className="py-5">
+                            <div className="font-bold">{item.nombre || item.name}</div>
+                            <div className="text-xs text-slate-500">
+                                {item.email || item.ciudad || item.correo}
+                            </div>
+                        </td>
+
+                        {isAdminView && (
+
+                            <td>
+                                {item.role}
+                            </td>
+
+                        )}
+
+                        <td className="text-right space-x-2">
+
+                            {onToggle && item.id !== currentId && (
+
+                                <button
+                                    onClick={() => onToggle(item.id)}
+                                    className="text-xs bg-purple-600 px-3 py-2 rounded"
+                                >
+                                    Toggle
+                                </button>
+
+                            )}
+
+                            {item.id !== currentId && (
+
+                                <button
+                                    onClick={() => onDelete(item.id)}
+                                    className="text-xs bg-red-600 px-3 py-2 rounded"
+                                >
+                                    Borrar
+                                </button>
+
+                            )}
+
+                        </td>
+
+                    </tr>
+
                 ))}
+
             </tbody>
+
         </table>
+
     );
 }

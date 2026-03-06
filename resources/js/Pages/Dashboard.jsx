@@ -6,7 +6,7 @@ import React, { useState, useEffect } from 'react';
 import Mapa from "@/Components/Mapa";
 
 // --- 1. COMPONENTE HERO ---
-function HeroHeader() {
+function HeroHeader({ user }) {
     return (
         <div className="relative bg-gray-900 overflow-hidden" id='Inicio'>
             <div 
@@ -17,18 +17,31 @@ function HeroHeader() {
                 }}
             ></div>
             <div className="relative max-w-7xl mx-auto px-4 py-16 sm:py-24 lg:py-32 flex items-center h-96">
-                <div className="max-w-2xl">
+                <div className="max-w-2xl space-y-6">
                     <h2 className="text-3xl font-extrabold text-purple-200 sm:text-4xl italic">
                         Descubre hermosos lugares del valle de aburra
                     </h2>
                     <p className="mt-4 text-lg text-purple-300">
                         Encuentra las joyas escondidas y los restaurantes mejor valorados
                     </p>
+
+                    {/* BOTONES */}
+                <div className="mt-6 flex flex-row gap-10 items-center"></div>
+
                     <Link 
                         href={route('explorar')} 
-                        className="mt-6 inline-block bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 px-6 rounded-full transition shadow-lg">
+                        className="bg-purple-700 hover:bg-purple-800 text-white font-bold py-3 px-6 rounded-full transition shadow-lg">
                         Explorar más lugares
                     </Link>
+
+                    {user?.role === "admin" && (
+                        <Link
+                            href={route('admin.dashboard')}
+                            className="bg-purple-700 hover:bg-purple-800 text-white font-bold py-3 px-6 rounded-full transition shadow-lg"
+                        >
+                            Panel Administrador
+                        </Link>
+                    )}
                 </div>
             </div>
         </div>
@@ -59,7 +72,8 @@ const PlaceCard = ({ name, rating, imageUrl }) => {
 
 // --- 3. DASHBOARD PRINCIPAL ---
 export default function Dashboard({ auth, lugares, restaurantes, lugaresMapa }) {
-    const { flash } = usePage().props; 
+    const { flash } = usePage().props;
+    const user = auth?.user; 
     const [isModalOpen, setIsModalOpen] = useState(false); // Modal Registro
     const [selectedItem, setSelectedItem] = useState(null); // Modal Detalle
     const [itemType, setItemType] = useState(''); // 'lugar' o 'restaurante'
@@ -135,8 +149,8 @@ export default function Dashboard({ auth, lugares, restaurantes, lugaresMapa }) 
                 </div>
             )}
 
-            <HeroHeader />
-
+            <HeroHeader user={user} />
+            
             {/* SECCIÓN LUGARES */}
             <div className="bg-gray-900 py-12 border-t border-purple-800" id="Lugares">
                 <div className="max-w-7xl mx-auto px-4">

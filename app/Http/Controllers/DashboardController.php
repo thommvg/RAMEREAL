@@ -54,6 +54,9 @@ class DashboardController extends Controller
         $mapaCompleto = $lugaresMapa->concat($restaurantesMapa)->values();
 
         return Inertia::render('Dashboard', [
+            'auth' => [
+                'user' => Auth::user()
+            ],
             'lugares' => $lugares,
             'restaurantes' => $restaurantes,
             'lugaresMapa' => $mapaCompleto
